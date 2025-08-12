@@ -1,20 +1,12 @@
 import express from "express";
 import dotenv from "dotenv";
 import { DB } from "./db/db.js";
-// import { DB_Name } from "./constants.js";
 
 dotenv.config({ path: ['.env.local', '.env'] });
 const app = express();
 
 const PORT = process.env.PORT;
 app.use(express.json());
-
-
-
-app.use('/', (req, res) => {
-    res.send("hie you wassup?")
-})
-
 
 DB()
 .then(()=>{
@@ -23,7 +15,6 @@ DB()
 })})
 .catch((error)=>{
     console.log(error);
-    
 })
 
 
@@ -51,11 +42,9 @@ DB()
 
 
 
-
-
-
-
-
+// app.use('/', (req, res) => {
+//     res.send("hie you wassup?")
+// })
 
 
 /*

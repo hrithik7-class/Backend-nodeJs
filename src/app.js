@@ -18,4 +18,9 @@ app.use(cookieParser())
 // for file uplaoding we use multer just like express.json() to handle javascript oject notation to javascipt 
 
 
+//router
+import userRouter from "./routers/user.route.js"
 
+
+//routes
+app.use('/api/v1/users',userRouter)
