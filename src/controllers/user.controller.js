@@ -3,12 +3,13 @@ import {ApiError} from "../utils/apiError.js"
 import {APiResponse} from '../utils/apiResponse.js'
 import User from "../models/user.model.js"
 import {uploadOnCloudinary } from "../utils/cloundinary.js"
+import jwt from "jsonwebtoken"
 
 const generateAccessAndRefreshToken = async (userId)=>{
     try {
         const  user = User.findById(userId);
-        const  accessToken = generateAccessToken();
-        const  refreshToken = generateRefreshToken();
+        const  accessToken = user.generateAccessToken();
+        const  refreshToken = user.generateRefreshToken();
         
         user.refreshToken = refreshToken;
         await user.save({validateBeforeSave : false})
@@ -53,9 +54,9 @@ export const registerUer = asyncHandler(async (req , res)=>{
         coverImageLocalPath = req.files?.coverImage[0]?.path;
     }
 
-    if(!coverImageLocalPath){
-        throw new ApiError(400,"coverImage file is required")
-    }
+    // if(!coverImageLocalPath){
+    //     throw new ApiError(400,"coverImage file is required")
+    // }
     const  avatar = await uploadOnCloudinary(avatarLocalPath);
     const  coverImage = await uploadOnCloudinary(coverImageLocalPath);
 
@@ -104,7 +105,7 @@ export const loginUser =asyncHandler(async (req,res) =>{
 
    const {accessToken , refreshToken} = await  generateAccessAndRefreshToken(user._id);
 
-   const logedInUser = await User.findById(user.id).select("-password , -refreshToken");
+   const loggedInUser = await User.findById(user.id).select("-password , -refreshToken");
 
    const options ={
     httpOnly:true,
@@ -148,3 +149,40 @@ export const logoutUser = asyncHandler(async (req,res)=>{
    
 })
 
+export const refreshAccessToken = asyncHandler(async (req,res)=>{
+    const incomingRefreshToken = req.cookies.refeshToken || req.boby.refeshToken;
+    if(!incomingRefreshToken){
+        throw new ApiError(401, "Unauthorized request");
+    }
+    try {
+        const decordedToken = jwt.verify(
+        incomingRefreshToken,
+        REFRESH_TOKEN_SECRET
+    )
+    const user = await User.fingById(decordedToken._id)
+     if(!user){
+        throw new ApiError(401, "Invalid refresh token");
+    }
+
+    if(incomingRefreshToken !== user?.refeshToken){
+        throw new ApiError(401, "refresh token in expired or used!");
+    }
+    const options ={
+        httpOnly:true,
+        secure:true
+    }
+    
+   const {newRefreshToken , accessToken}=  await generateAccessAndRefreshToken(user._id)
+   res.status(200)
+   .cookies("accessToken", accessToken , options)
+   .cookies("refreshToken" , newRefreshToken ,options)
+   .json( 200,{
+      accessToken , refeshToken : newRefreshToken
+   },"Access token refresh succesfully.")
+        
+    } catch (error) {
+        throw new ApiError(401, error.message)
+        
+    }
+    
+})

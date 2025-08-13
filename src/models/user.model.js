@@ -38,7 +38,6 @@ const userSchema = new mongoose.Schema({
     avatar:{
         type:String,
         required:true,
-        enum:["avt1" ,"avt2", "avt3"] 
     },
     coverImage:{
         type:String,
